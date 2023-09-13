@@ -22,7 +22,7 @@ struct HashTable {
 };
 
 struct HashTable* HashTable_Init(struct HashTable* hashTable, int (*cmp)(void* a, void* b), unsigned int (*hash)(void* key), int (*onRemove)(struct HashPair*));
-int HashTable_Destroy(struct HashTable* hashTable);
+void HashTable_Destroy(struct HashTable* hashTable);
 void* HashTable_Has(struct HashTable* hashTable, void* key);
 void* HashTable_At(struct HashTable* hashTable, void* key);
 int HashTable_Ready(struct HashTable* hashTable);
@@ -37,13 +37,15 @@ struct HashTable* HashTable_Init(struct HashTable* hashTable, int (*cmp)(void* a
     return hashTable;
 };
 
-int HashTable_Destroy(struct HashTable* hashTable) {
+void HashTable_Destroy(struct HashTable* hashTable) {
     if(hashTable && HashTable_Ready(hashTable)) {
         for(int i = 0; i < HASHSIZE; i++) {
             struct HashList* l = hashTable->hashListArr[i];
             while(l) {
                 struct HashList* next = l->next;
-                hashTable->onRemove(l->pair);
+                if(hashTable->onRemove) {
+                    hashTable->onRemove(l->pair);
+                }
                 free(l->pair);
                 free(l);
                 l = next;
