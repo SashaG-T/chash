@@ -14,7 +14,7 @@ The use case didn't require the need to remove entries.
 
 ## Warning
 
-To use this header you'll need to use pointers very heavily. This is because the code provides a sense of 'generic-ness' through the use of `void*`
+To use this header you'll need to use pointers very heavily. This is because the code provides a sense of 'generic-ness' through the use of `void*`.
 
 `HashTable_At` returns a `void*` but this `void*` is actually a pointer to a pointer. You can see this within the example at the bottom of this document where we cast the return value of `HashTable_At` to a pointer to a function pointer and then dereference it to get the function pointer itself.
 
@@ -298,7 +298,7 @@ In the `onRemove` function we only need to handle how `hashPair->key` and `hashP
 
 ---
 
-## Example
+## Example 1
 
 ```C
 #include <stdio.h>
@@ -343,4 +343,80 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+```
+
+##### Expected Output
+
+```
+Hello, World!
+Good-bye!
+```
+
+## Example 2
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include "hash.h"
+
+#define AT(TYPE,TABLE,KEY) (*(TYPE*)HashTable_At(&TABLE,KEY))
+
+struct Element {
+    const char* element_value;
+};
+
+struct Element* CreateElement(const char* value) {
+    struct Element* e = malloc(sizeof(struct Element));
+    e->element_value = value;
+    return e;
+}
+
+void DestroyElement(struct Element* e) {
+    free(e);
+}
+
+int cmp(void* m1, void* m2) {
+    return m1 - m2;
+}
+
+unsigned int hash(void* key) {
+    return (unsigned int)key;
+}
+
+void onRemove(struct HashPair* hashPair) {
+    struct Element* e = hashPair->element;
+    printf("Destroying Element: %s\n", e->element_value);
+    DestroyElement(hashPair->element);
+}
+
+int main(int argc, char* argv[]) {
+    //Setup table
+    struct HashTable table;
+    HashTable_Init(&table, cmp, hash, onRemove);
+
+    //Add stuff to table
+    AT(struct Element*, table, 42) = CreateElement("This is the answer.");
+    AT(struct Element*, table, 35) = CreateElement("This is not the answer.");
+
+    //Access the table.
+    struct Element* e1 = AT(struct Element*, table, 42);
+    struct Element* e2 = AT(struct Element*, table, 35);
+
+    //Do stuff with accessed things.
+    printf("Answer 42  : %s\n", e1->element_value);
+    printf("Answer 35  : %s\n", e2->element_value);
+
+    HashTable_Destroy(&table);
+
+    return 0;
+}
+```
+
+##### Expected Output
+
+```
+Answer 42  : This is the answer.
+Answer 35  : This is not the answer.
+Destroying Element: This is not the answer.
+Destroying Element: This is the answer.
 ```
